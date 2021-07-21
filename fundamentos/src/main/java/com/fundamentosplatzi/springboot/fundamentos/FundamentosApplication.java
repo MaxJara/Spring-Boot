@@ -7,6 +7,7 @@ import com.fundamentosplatzi.springboot.fundamentos.component.ComponentDependenc
 import com.fundamentosplatzi.springboot.fundamentos.entity.User;
 import com.fundamentosplatzi.springboot.fundamentos.pojo.UserPojo;
 import com.fundamentosplatzi.springboot.fundamentos.repository.UserRepository;
+import com.fundamentosplatzi.springboot.fundamentos.service.UserService;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -31,14 +32,16 @@ public class FundamentosApplication implements CommandLineRunner {
 	private MyBeanWithProperties myBeanWithProperties;
 	private UserPojo userPojo;
 	private UserRepository userRepository;
+	private UserService userService;
 
-	public FundamentosApplication(@Qualifier("componentTwoImplement") ComponentDependency componentDependency, MyBean myBean, MyBeanWithDependency myBeanWithDependency, MyBeanWithProperties myBeanWithProperties, UserPojo userPojo, UserRepository userRepository){
+	public FundamentosApplication(@Qualifier("componentTwoImplement") ComponentDependency componentDependency, MyBean myBean, MyBeanWithDependency myBeanWithDependency, MyBeanWithProperties myBeanWithProperties, UserPojo userPojo, UserRepository userRepository, UserService userService){
 		this.componentDependency = componentDependency;
 		this.myBean = myBean;
 		this.myBeanWithDependency = myBeanWithDependency;
 		this.myBeanWithProperties = myBeanWithProperties;
 		this.userPojo = userPojo;
 		this.userRepository = userRepository;
+		this.userService = userService;
 	}
 
 	public static void main(String[] args) {
@@ -50,16 +53,62 @@ public class FundamentosApplication implements CommandLineRunner {
 		//ejemplosAnteriores();
 		saveUsersInDatabase();
 		getInformationJpqlFromUser();
+		saveWithErrorTransactional();
+	}
+
+	private void saveWithErrorTransactional(){
+		User test1 = new User("TestTransactional1", "TestTransactional1@domain.com", LocalDate.now());
+		User test2 = new User("TestTransactional2", "TestTransactional2@domain.com", LocalDate.now());
+		User test3 = new User("TestTransactional3", "TestTransactional3@domain.com", LocalDate.now());
+		User test4 = new User("TestTransactional4", "TestTransactional4@domain.com", LocalDate.now());
+
+		List<User> users = Arrays.asList(test1, test2, test3, test4);
+		try{
+			userService.saveTransactional(users);
+		}catch (Exception e){
+			LOGGER.error("Esta es una exception dentro del metodo transaccional " + e);
+		}
+		userService.getAllUsers().stream()
+		.forEach(user ->
+				LOGGER.info("Este es el usuario dentro del metodo transaccional " + user));
 	}
 
 	private void getInformationJpqlFromUser(){
-		LOGGER.info("Usuario con el metodo findByUserEmail" +
+		/*LOGGER.info("Usuario con el metodo findByUserEmail" +
 				userRepository.findMyUserByEmail("daniela@domain.com")
 				.orElseThrow(()-> new RuntimeException("No se encontro el usuario")));
 
 		userRepository.findByAndSort("user", Sort.by("id").descending())
 				.stream()
 				.forEach(user -> LOGGER.info("Usuario con metodo sort " + user));
+
+		userRepository.findByName("John")
+		.stream()
+		.forEach(user -> LOGGER.info("Usuario con query method " + user));
+
+		LOGGER.info("Usuario con query method findByEmailAndName" + userRepository.findByEmailAndName("daniela@domain.com", "Daniela")
+		.orElseThrow(()-> new RuntimeException("Usuario no encontrado")));
+
+		userRepository.findByNameLike("%u%")
+				.stream()
+				.forEach(user -> LOGGER.info("Usuario findByNameLike" + user));
+
+		userRepository.findByNameOrEmail(null, "oscar@domain.com")
+				.stream()
+				.forEach(user -> LOGGER.info("Usuario findByNameOrEmail" + user));*/
+
+		userRepository
+				.findByBirthDateBetween(LocalDate.of(2021,3,1), LocalDate.of(2021,4,2))
+				.stream()
+				.forEach(user -> LOGGER.info("Usuario con intervalo de fechas" + user));
+
+		userRepository.findByNameLikeOrderByIdDesc("%user%")
+				.stream()
+				.forEach(user -> LOGGER.info("Usuario con metodo con like y ordenado:" + user));
+
+		LOGGER.info("El usuario a partir del named parameter es: " + userRepository.getAllByBirthDateAndEmail(LocalDate.of(2021, 03, 25), "daniela@domain.com")
+				.orElseThrow(()->
+						new RuntimeException("No se encontro el usuario a partir del named parameter")));
 	}
 
 	private void saveUsersInDatabase(){

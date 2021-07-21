@@ -19,6 +19,7 @@ public class User {
     private String name;
     @Column(length = 50, nullable = false, unique = true)
     private String email;
+
     @Column(name = "birth_date")
     private LocalDate birthDate;
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
@@ -32,6 +33,10 @@ public class User {
         this.name = name;
         this.email = email;
         this.birthDate = birthDate;
+    }
+
+    public User(Long id) {
+        this.id=id;
     }
 
     public Long getId() {

@@ -1,9 +1,11 @@
 package com.fundamentosplatzi.springboot.fundamentos.repository;
 
+import com.fundamentosplatzi.springboot.fundamentos.dto.UserDto;
 import com.fundamentosplatzi.springboot.fundamentos.entity.User;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -12,42 +14,32 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
-    @Query("SELECT u FROM User u WHERE u.email=?1")
+public interface UserRepository extends PagingAndSortingRepository<User, Long> {
+    @Query("Select u from User u where u.email=?1")
     Optional<User> findMyUserByEmail(String email);
 
-    @Query(value = "SELECT * FROM users WHERE email = ?1", nativeQuery = true)
-    Optional<User> findMyUserByEmailNative(String email);
-
-    @Query("select u from User u where u.name like ?1%")
+    @Query("Select u from User u where u.name like ?1%")
     List<User> findByAndSort(String name, Sort sort);
 
-//    List<User> findByNameOrderById(String name);
+    List<User> findByName(String name);
 
-    List<User> findByNameContaining(String name);
+    Optional<User> findByEmailAndName(String email, String name);
 
-    //… where x.firstname like ?1
     List<User> findByNameLike(String name);
 
-    //… where x.name = ?1 and x.email = ?2
-    Optional<User> findUsersByNameAndAndEmail(String name, String email);
+    List<User> findByNameOrEmail(String name, String email);
 
-    //… where x.name = ?1 or x.email = ?2
-    Optional<User> findUsersByNameOrAndEmail(String name, String email);
-
-    //… where x.birthDate between ?1 and ?2
     List<User> findByBirthDateBetween(LocalDate begin, LocalDate end);
 
-    //… where x.age = ?1 order by x.lastname desc
     List<User> findByNameLikeOrderByIdDesc(String name);
 
-    //… where x.age = ?1 order by x.lastname desc
-    List<User> findByNameContainingOrderByIdDesc(String name);
+    @Query("SELECT new com.fundamentosplatzi.springboot.fundamentos.dto.UserDto(u.id, u.name, u.birthDate)" +
+    "FROM User u" +
+    " where u.birthDate=:parametroFecha " +
+    " and u.email=:parametroEmail ")
+    Optional<UserDto> getAllByBirthDateAndEmail(@Param("parametroFecha") LocalDate date,
+                                                @Param("parametroEmail") String email);
 
-    //Using Named Parameters
-    @Query("select u from User u where u.name = :name or u.email = :email")
-    Optional<User> findByNameOrEmail(@Param("name") String name,
-                                     @Param("email") String email);
-
+    List<User> findAll();
 
 }
